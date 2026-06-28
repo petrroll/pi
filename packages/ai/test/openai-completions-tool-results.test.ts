@@ -54,7 +54,84 @@ function buildToolResult(toolCallId: string, timestamp: number): ToolResultMessa
 	};
 }
 
-describe("openai-completions convertMessages", () => {
+function convertToolResult(content: ToolResultMessage["content"]): unknown {
+	const { compat: _compat, ...baseModel } = getModel("openai", "gpt-4o-mini");
+	const model: Model<"openai-completions"> = {
+		...baseModel,
+		api: "openai-completions",
+		input: ["text", "image"],
+	};
+	const context: Context = {
+		messages: [
+			{
+				role: "toolResult",
+				toolCallId: "tool-empty",
+				toolName: "replace",
+				content,
+				isError: false,
+				timestamp: Date.now(),
+			},
+		],
+	};
+	const messages = convertMessages(model, context, compat);
+	const toolMessage = messages.find((message) => message.role === "tool");
+	if (!toolMessage || toolMessage.role !== "tool") {
+		throw new Error("Expected tool message");
+	}
+	return toolMessage.content;
+}
+
+describe("openai-completions empty tool results", () => {
+	it("does not use the attached-image hint for empty text when no image is attached", () => {
+		expect(convertToolResult([{ type: "text", text: "" }])).toBe("");
+	});
+
+	it("does not use the attached-image hint for contentless results when no image is attached", () => {
+		expect(convertToolResult([])).toBe("");
+	});
+});
+
+describe("openai-completions tool result images", () => {
+	it("uses the attached-image hint when text is empty and an image is attached", () => {
+		const { compat: _compat, ...baseModel } = getModel("openai", "gpt-4o-mini");
+		const model: Model<"openai-completions"> = {
+			...baseModel,
+			api: "openai-completions",
+			input: ["text", "image"],
+		};
+		const context: Context = {
+			messages: [
+				{
+					role: "toolResult",
+					toolCallId: "tool-empty-image",
+					toolName: "replace",
+					content: [
+						{ type: "text", text: "" },
+						{ type: "image", data: "ZmFrZQ==", mimeType: "image/png" },
+					],
+					isError: false,
+					timestamp: Date.now(),
+				},
+			],
+		};
+
+		const messages = convertMessages(model, context, compat);
+		const toolMessage = messages.find((message) => message.role === "tool");
+		expect(toolMessage?.content).toBe("(see attached image)");
+
+		const imageMessage = messages.find((message) => message.role === "user" && Array.isArray(message.content));
+		expect(imageMessage).toBeDefined();
+		if (!imageMessage || imageMessage.role !== "user" || !Array.isArray(imageMessage.content)) {
+			throw new Error("Expected user image message");
+		}
+
+		const imageParts = (imageMessage.content as Array<{ type?: string; image_url?: { url?: string } }>).filter(
+			(part) => part?.type === "image_url",
+		);
+		expect(imageParts).toHaveLength(1);
+		expect(imageParts[0].image_url?.url).toBe("data:image/png;base64,ZmFrZQ==");
+	});
+
 	it("batches tool-result images after consecutive tool results", () => {
 		const { compat: _compat, ...baseModel } = getModel("openai", "gpt-4o-mini");
 		const model: Model<"openai-completions"> = {
@@ -62,7 +139,6 @@ describe("openai-completions convertMessages", () => {
 			api: "openai-completions",
 			input: ["text", "image"],
 		};
-
 		const now = Date.now();
 		const assistantMessage: AssistantMessage = {
 			role: "assistant",

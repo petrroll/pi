@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import type { ResponseFunctionCallOutputItemList } from "openai/resources/responses/responses.js";
 import { Type } from "typebox";
 import { describe, expect, it } from "vitest";
+import { convertResponsesMessages } from "../src/api/openai-responses-shared.ts";
 import type { Api, Context, Model, StreamOptions, Tool, ToolResultMessage } from "../src/compat.ts";
 import { complete, getModel } from "../src/compat.ts";
 import { hasAzureOpenAICredentials, resolveAzureDeploymentName } from "./azure-utils.ts";
@@ -44,6 +45,29 @@ function isInputTextItem(value: unknown): value is { type: "input_text"; text: s
 
 function isInputImageItem(value: unknown): value is { type: "input_image"; image_url: string } {
 	return isRecord(value) && value.type === "input_image" && typeof value.image_url === "string";
+}
+
+function convertToolResult(content: ToolResultMessage["content"]): string | ResponseFunctionCallOutputItemList {
+	const model = getModel("openai", "gpt-5-mini");
+	const context: Context = {
+		messages: [
+			{
+				role: "toolResult",
+				toolCallId: "call_empty|fc_empty",
+				toolName: "replace",
+				content,
+				isError: false,
+				timestamp: Date.now(),
+			},
+		],
+	};
+
+	const input: unknown[] = convertResponsesMessages(model, context, new Set(["openai", "openai-codex", "opencode"]));
+	const functionCallOutput = input.find(isFunctionCallOutputItem);
+	if (!functionCallOutput) {
+		throw new Error("Expected function_call_output item");
+	}
+	return functionCallOutput.output;
 }
 
 async function verifyToolResultImagesStayInFunctionCallOutput<TApi extends Api>(
@@ -148,6 +172,16 @@ async function verifyToolResultImagesStayInFunctionCallOutput<TApi extends Api>(
 	expect(responseText).toContain("red");
 	expect(responseText).toContain("circle");
 }
+
+describe("Responses API empty tool results", () => {
+	it("does not use the attached-image hint for empty text when no image is attached", () => {
+		expect(convertToolResult([{ type: "text", text: "" }])).toBe("");
+	});
+
+	it("does not use the attached-image hint for contentless results when no image is attached", () => {
+		expect(convertToolResult([])).toBe("");
+	});
+});
 
 describe("Responses API tool result images", () => {
 	describe.skipIf(!process.env.OPENAI_API_KEY)("OpenAI Responses Provider (gpt-5-mini)", () => {

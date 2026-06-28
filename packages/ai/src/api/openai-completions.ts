@@ -1025,12 +1025,12 @@ export function convertMessages(
 					.join("\n");
 				const hasImages = toolMsg.content.some((c) => c.type === "image");
 
-				// Always send tool result with text (or placeholder if only images)
 				const hasText = textResult.length > 0;
+				const content = hasText ? sanitizeSurrogates(textResult) : hasImages ? "(see attached image)" : "";
 				// Some providers require the 'name' field in tool results
 				const toolResultMsg: ChatCompletionToolMessageParam = {
 					role: "tool",
-					content: sanitizeSurrogates(hasText ? textResult : "(see attached image)"),
+					content,
 					tool_call_id: toolMsg.toolCallId,
 				};
 				if (compat.requiresToolResultName && toolMsg.toolName) {
