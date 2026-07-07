@@ -18,6 +18,7 @@
 - Fixed oversized bash tool timeouts to fail with a clear validation error instead of being clamped to an immediate timeout ([#6181](https://github.com/earendil-works/pi/issues/6181)).
 - Fixed the edit tool schema to allow model-invented extra replacement fields instead of rejecting otherwise valid edits ([#6278](https://github.com/earendil-works/pi/issues/6278)).
 - Fixed new session resets to clear cached label timestamps ([#6354](https://github.com/earendil-works/pi/issues/6354)).
+- Fixed `models.json` `modelOverrides` to apply to extension-registered provider models ([#6367](https://github.com/earendil-works/pi/issues/6367)).
 
 ### Removed
 
