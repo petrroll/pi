@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Added provider compatibility overrides for disabling inherited OpenAI Codex Responses SSE request-body compression ([#6483](https://github.com/earendil-works/pi/issues/6483)).
+
 ## [0.80.6] - 2026-07-09
 
 ### New Features

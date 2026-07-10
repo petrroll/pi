@@ -214,6 +214,10 @@ function compressRequestBodyZstd(bodyJson: string): Uint8Array | null {
 	}
 }
 
+function shouldCompressRequestBody(model: Model<"openai-codex-responses">): boolean {
+	return (model.compat?.requestCompression ?? "auto") !== "disabled";
+}
+
 // ============================================================================
 // Main Stream Function
 // ============================================================================
@@ -338,11 +342,12 @@ export const stream: StreamFunction<"openai-codex-responses", OpenAICodexRespons
 			// Compress the request body once for the SSE path. The Codex backend
 			// decodes Content-Encoding: zstd; the WebSocket transport above sends the
 			// uncompressed JSON frame, matching the official Codex client.
-			const compressedBody = compressRequestBodyZstd(bodyJson);
-			if (compressedBody) {
+			const shouldCompressSseRequestBody = shouldCompressRequestBody(model);
+			const compressedSseRequestBody = shouldCompressSseRequestBody ? compressRequestBodyZstd(bodyJson) : null;
+			if (compressedSseRequestBody) {
 				sseHeaders.set("content-encoding", "zstd");
 			}
-			const sseBody: Uint8Array | string = compressedBody ?? bodyJson;
+			const sseBody: Uint8Array | string = compressedSseRequestBody ?? bodyJson;
 
 			// Fetch with retry logic for rate limits and transient errors
 			let response: Response | undefined;

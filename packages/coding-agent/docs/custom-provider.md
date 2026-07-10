@@ -723,6 +723,9 @@ interface ProviderModelConfig {
     chatTemplateKwargs?: Record<string, string | number | boolean | null | { "$var": "thinking.enabled" | "thinking.effort"; omitWhenOff?: boolean }>;
     cacheControlFormat?: "anthropic";
 
+    // openai-codex-responses
+    requestCompression?: "auto" | "disabled";
+
     // anthropic-messages
     supportsEagerToolInputStreaming?: boolean;
     supportsLongCacheRetention?: boolean;

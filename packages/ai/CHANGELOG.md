@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Added
+
+- Added `requestCompression: "auto" | "disabled"` model compatibility metadata for OpenAI Codex Responses so providers can disable zstd SSE request-body compression ([#6483](https://github.com/earendil-works/pi/issues/6483)).
+
 ## [0.80.6] - 2026-07-09
 
 ### Added

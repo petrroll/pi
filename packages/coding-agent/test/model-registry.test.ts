@@ -6,6 +6,7 @@ import type {
 	Api,
 	Context,
 	Model,
+	OpenAICodexResponsesCompat,
 	OpenAICompletionsCompat,
 } from "@earendil-works/pi-ai/compat";
 import { getApiProvider, getSupportedThinkingLevels } from "@earendil-works/pi-ai/compat";
@@ -401,6 +402,25 @@ describe("ModelRegistry", () => {
 				const compat = model.compat as OpenAICompletionsCompat | undefined;
 				expect(compat?.supportsUsageInStreaming).toBe(false);
 				expect(compat?.supportsStrictMode).toBe(false);
+			}
+		});
+
+		test("OpenAI Codex compat can disable request compression for built-in models", () => {
+			writeRawModelsJson({
+				"openai-codex": {
+					compat: {
+						requestCompression: "disabled",
+					},
+				},
+			});
+
+			const registry = ModelRegistry.create(authStorage, modelsJsonPath);
+			const models = getModelsForProvider(registry, "openai-codex");
+
+			expect(models.length).toBeGreaterThan(0);
+			for (const model of models) {
+				const compat = model.compat as OpenAICodexResponsesCompat | undefined;
+				expect(compat?.requestCompression).toBe("disabled");
 			}
 		});
 

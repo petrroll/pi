@@ -96,6 +96,7 @@ export interface ThinkingBudgets {
 export type CacheRetention = "none" | "short" | "long";
 
 export type Transport = "sse" | "websocket" | "websocket-cached" | "auto";
+export type RequestCompression = "auto" | "disabled";
 
 /** Provider-scoped environment overrides. Values take precedence over process.env. */
 export type ProviderEnv = Record<string, string>;
@@ -527,6 +528,12 @@ export interface OpenAIResponsesCompat {
 	supportsLongCacheRetention?: boolean;
 }
 
+/** Compatibility settings for OpenAI Codex Responses APIs. */
+export interface OpenAICodexResponsesCompat {
+	/** Request-body compression policy for SSE requests. Default: "auto". */
+	requestCompression?: RequestCompression;
+}
+
 /** Compatibility settings for Anthropic Messages-compatible APIs. */
 export interface AnthropicMessagesCompat {
 	/**
@@ -702,9 +709,11 @@ export interface Model<TApi extends Api> {
 		? OpenAICompletionsCompat
 		: TApi extends "openai-responses"
 			? OpenAIResponsesCompat
-			: TApi extends "anthropic-messages"
-				? AnthropicMessagesCompat
-				: never;
+			: TApi extends "openai-codex-responses"
+				? OpenAICodexResponsesCompat
+				: TApi extends "anthropic-messages"
+					? AnthropicMessagesCompat
+					: never;
 }
 
 export interface ImagesModel<TApi extends ImagesApi>

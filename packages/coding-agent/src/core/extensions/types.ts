@@ -1459,7 +1459,7 @@ export interface ProviderModelConfig {
 	maxTokens: number;
 	/** Custom headers for this model. */
 	headers?: Record<string, string>;
-	/** OpenAI compatibility settings. */
+	/** Compatibility settings for the selected API. */
 	compat?: Model<Api>["compat"];
 }
 

@@ -1845,6 +1845,63 @@ describe("openai-codex streaming", () => {
 		expect(capturedBody).toBeInstanceOf(Uint8Array);
 	});
 
+	it("can disable zstd compression for SSE request bodies", async () => {
+		const token = mockToken();
+		const encoder = new TextEncoder();
+		const sse = buildSSEPayload({ status: "completed" });
+		let capturedEncoding: string | null = null;
+		let capturedBody: Uint8Array | string | undefined;
+
+		const fetchMock = vi.fn(async (input: string | URL, init?: RequestInit) => {
+			const url = typeof input === "string" ? input : input.toString();
+			if (url !== "https://chatgpt.com/backend-api/codex/responses") {
+				throw new Error(`Unexpected URL: ${url}`);
+			}
+			const headers = init?.headers instanceof Headers ? init.headers : undefined;
+			capturedEncoding = headers?.get("content-encoding") ?? null;
+			capturedBody = init?.body as Uint8Array | string | undefined;
+			return new Response(
+				new ReadableStream<Uint8Array>({
+					start(controller) {
+						controller.enqueue(encoder.encode(sse));
+						controller.close();
+					},
+				}),
+				{ status: 200, headers: { "content-type": "text/event-stream" } },
+			);
+		});
+		vi.stubGlobal("fetch", fetchMock);
+
+		const model: Model<"openai-codex-responses"> = {
+			id: "gpt-5.1-codex",
+			name: "GPT-5.1 Codex",
+			api: "openai-codex-responses",
+			provider: "openai-codex",
+			baseUrl: "https://chatgpt.com/backend-api",
+			reasoning: true,
+			input: ["text"],
+			cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+			contextWindow: 400000,
+			maxTokens: 128000,
+		};
+		const context: Context = {
+			systemPrompt: "You are a helpful assistant.",
+			messages: [{ role: "user", content: "Say hello", timestamp: 1 }],
+		};
+
+		await streamOpenAICodexResponses({ ...model, compat: { requestCompression: "disabled" } }, context, {
+			apiKey: token,
+			transport: "sse",
+		}).result();
+
+		expect(capturedEncoding).toBeNull();
+		expect(typeof capturedBody).toBe("string");
+		// this would decompresses but assert above checked it's string, so can't be compressed
+		expect(decodeCodexRequestBody(capturedBody)?.input).toEqual([
+			{ role: "user", content: [{ type: "input_text", text: "Say hello" }] },
+		]);
+	});
+
 	it("uses exponential backoff across repeated SSE retries without retry headers", async () => {
 		vi.useFakeTimers();
 		vi.setSystemTime(new Date("2026-05-13T00:00:00Z"));

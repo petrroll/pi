@@ -1061,7 +1061,7 @@ Importing an implementation module loads its SDK. The `./api/<id>.lazy` wrappers
 
 ### OpenAI Compatibility Settings
 
-The `openai-completions` API is implemented by many providers with minor differences. By default, the library auto-detects compatibility settings based on `baseUrl` for a small set of known OpenAI-compatible providers (Cerebras, xAI, Chutes, DeepSeek, NVIDIA NIM, Together AI, zAi, OpenCode, Cloudflare Workers AI, etc.). For custom proxies or unknown endpoints, you can override these settings via the `compat` field. For `openai-responses` models, the compat field supports Responses-specific flags.
+The `openai-completions` API is implemented by many providers with minor differences. By default, the library auto-detects compatibility settings based on `baseUrl` for a small set of known OpenAI-compatible providers (Cerebras, xAI, Chutes, DeepSeek, NVIDIA NIM, Together AI, zAi, OpenCode, Cloudflare Workers AI, etc.). For custom proxies or unknown endpoints, you can override these settings via the `compat` field. Responses APIs also support API-specific flags.
 
 ```typescript
 interface OpenAICompletionsCompat {
@@ -1088,13 +1088,18 @@ interface OpenAIResponsesCompat {
   sendSessionIdHeader?: boolean;     // Whether to send `session_id` from `sessionId` when caching is enabled (default: true)
   supportsLongCacheRetention?: boolean; // Whether provider supports `prompt_cache_retention: "24h"` (default: true)
 }
+
+interface OpenAICodexResponsesCompat {
+  requestCompression?: 'auto' | 'disabled'; // SSE request-body compression policy (default: auto)
+}
 ```
 
-If `compat` is not set, the library falls back to URL-based detection. If `compat` is partially set, unspecified fields use the detected defaults. This is useful for:
+Unset fields use URL-based detection where supported and otherwise use the defaults documented above. This is useful for:
 
 - **LiteLLM proxies**: May not support `store` field
 - **Custom inference servers**: May use non-standard field names
 - **Self-hosted endpoints**: May have different feature support
+- **Codex proxies**: May need `requestCompression: "disabled"` to receive plain JSON request bodies instead of zstd-compressed SSE requests
 
 ## Faux Provider for Tests
 
