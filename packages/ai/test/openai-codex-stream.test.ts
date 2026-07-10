@@ -1896,7 +1896,6 @@ describe("openai-codex streaming", () => {
 
 		expect(capturedEncoding).toBeNull();
 		expect(typeof capturedBody).toBe("string");
-		// this would decompresses but assert above checked it's string, so can't be compressed
 		expect(decodeCodexRequestBody(capturedBody)?.input).toEqual([
 			{ role: "user", content: [{ type: "input_text", text: "Say hello" }] },
 		]);

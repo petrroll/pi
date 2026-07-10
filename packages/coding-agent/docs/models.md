@@ -138,7 +138,7 @@ Set `api` at provider level (default for all models) or model level (override pe
 | `apiKey` | Optional API key config (see value resolution below). Omit it when auth is provided by `/login`/`auth.json` or CLI `--api-key`. |
 | `headers` | Custom headers (see value resolution below) |
 | `authHeader` | Set `true` to add `Authorization: Bearer <apiKey>` automatically |
-| `compat` | Provider-level compatibility overrides for supported APIs. Merged into each model's `compat`. |
+| `compat` | Provider-level compatibility overrides in `models.json`. Merged into each model's `compat`. |
 | `models` | Array of model configurations |
 | `modelOverrides` | Per-model overrides for built-in or extension-registered models on this provider |
 
@@ -207,7 +207,7 @@ If your command is slow, expensive, rate-limited, or should keep using a previou
 | `contextWindow` | No | `128000` | Context window size in tokens |
 | `maxTokens` | No | `16384` | Maximum output tokens |
 | `cost` | No | all zeros | Per-million-token rates with optional request-wide input pricing tiers |
-| `compat` | No | provider `compat` | Provider compatibility overrides. Merged with provider-level `compat` when both are set. |
+| `compat` | No | provider `compat` | Model-level compatibility overrides. Merged with the provider's `models.json` `compat` when both are set. |
 
 A cost tier supplies a complete alternate rate set and applies to the full request when total input usage (`input + cacheRead + cacheWrite`) exceeds `inputTokensAbove`. When multiple tiers match, the highest threshold wins.
 
