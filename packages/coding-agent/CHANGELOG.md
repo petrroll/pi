@@ -5,6 +5,9 @@
 ### Fixed
 
 - Added a status line when the tool output expansion is toggled ([#7180](https://github.com/earendil-works/pi/issues/7180)).
+- Fixed the `write` tool reporting UTF-16 code units instead of UTF-8 bytes, which overstated file size for non-ASCII content ([#7121](https://github.com/earendil-works/pi/issues/7121)).
+- Fixed the `find` tool warning about the result limit when the match count was exactly the limit, which caused needless re-runs with a larger limit ([#7121](https://github.com/earendil-works/pi/issues/7121)).
+- Fixed `grep` line truncation splitting surrogate pairs, which replaced emoji and rare CJK characters with U+FFFD ([#7121](https://github.com/earendil-works/pi/issues/7121)).
 
 ## [0.82.1] - 2026-07-25
 

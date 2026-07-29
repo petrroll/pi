@@ -272,5 +272,10 @@ export function truncateLine(
 	if (line.length <= maxChars) {
 		return { text: line, wasTruncated: false };
 	}
-	return { text: `${line.slice(0, maxChars)}... [truncated]`, wasTruncated: true };
+	let cut = maxChars;
+	if (cut > 0) {
+		const code = line.charCodeAt(cut);
+		if (code >= 0xdc00 && code <= 0xdfff) cut--;
+	}
+	return { text: `${line.slice(0, cut)}... [truncated]`, wasTruncated: true };
 }
