@@ -225,6 +225,14 @@ export interface OAuthAuth {
 	/** Whether access through this auth method is backed by a provider subscription. */
 	isSubscription?: boolean;
 
+	/**
+	 * Opt in to one locked refresh and HTTP replay when a stored bearer token is
+	 * rejected with these statuses. Requires toAuth().apiKey === credential.access.
+	 * Only requests to the resolved base URL using that bearer token are retried;
+	 * explicit keys and other authorization headers are never replaced.
+	 */
+	refreshOnStatus?: readonly (401 | 403)[];
+
 	/** Selector label for the OAuth login option, e.g. "Sign in with SuperGrok or X Premium". */
 	loginLabel?: string;
 

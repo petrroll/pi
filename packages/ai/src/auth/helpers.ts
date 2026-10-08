@@ -40,6 +40,7 @@ export function envApiKeyAuth(name: string, envVars: readonly string[]): ApiKeyA
 export function lazyOAuth(input: {
 	name: string;
 	isSubscription?: boolean;
+	refreshOnStatus?: OAuthAuth["refreshOnStatus"];
 	loginLabel?: string;
 	load: () => Promise<OAuthAuth>;
 }): OAuthAuth {
@@ -51,6 +52,7 @@ export function lazyOAuth(input: {
 	return {
 		name: input.name,
 		isSubscription: input.isSubscription,
+		refreshOnStatus: input.refreshOnStatus,
 		loginLabel: input.loginLabel,
 		login: async (interaction, options) => (await loaded()).login(interaction, options),
 		refresh: async (credential, signal) => (await loaded()).refresh(credential, signal),

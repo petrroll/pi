@@ -1828,6 +1828,10 @@ Provider notes:
 
 **GitHub Copilot**: If you get "The requested model is not supported" error, enable the model manually in VS Code: open Copilot Chat, click the model selector, select the model (warning icon), and click "Enable".
 
+Copilot can revoke a session token before its advertised expiry while the stored GitHub token remains valid. Requests made through `Models` or coding-agent refresh stored Copilot OAuth credentials once on HTTP 401/403 and replay the rejected request once, before consuming its response body. Refresh runs under the credential-store lock; concurrent requests reuse the replacement token. If refresh fails or the replay is also rejected, the API error is returned. Explicit API keys and overridden authorization headers are not refreshed.
+
+This recovery is provider opt-in through `OAuthAuth.refreshOnStatus` (also available on `lazyOAuth`). It currently supports HTTP bearer auth where `toAuth().apiKey` is `credential.access`; only Copilot enables it. Other expiring-token providers may benefit from recovery on 401, but 403 can represent permissions or account policy rather than a stale token. OpenRouter's permanent OAuth-issued API key cannot be refreshed. WebSocket transports and direct API calls without a credential store are not covered.
+
 ## Migrating from the Old Global API
 
 Older versions exposed a global API: `stream()`/`complete()` dispatching on `model.api` via a global registry, sync `getModel()`/`getModels()`/`getProviders()` catalog reads, `registerApiProvider()`, `getEnvApiKey()`, and per-API lazy stream functions. That surface lives unchanged on the **compat entrypoint**:

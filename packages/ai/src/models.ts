@@ -1,6 +1,7 @@
 import { lazyStream } from "./api/lazy.ts";
 import { defaultProviderAuthContext as defaultAuthContext } from "./auth/context.ts";
 import { InMemoryCredentialStore } from "./auth/credential-store.ts";
+import { oauthRetryFetch } from "./auth/oauth-fetch.ts";
 import {
 	type AuthResolutionOverrides,
 	ModelsError,
@@ -67,6 +68,7 @@ import {
 } from "./utils/model-operations.ts";
 import { normalizeContext } from "./utils/transcript.ts";
 
+export { oauthRetryFetch } from "./auth/oauth-fetch.ts";
 export { ModelsError, type ModelsErrorCode } from "./auth/resolve.ts";
 export { getModelType, isModelType } from "./utils/model-operations.ts";
 
@@ -850,7 +852,7 @@ class ModelsImpl implements MutableModels {
 		requestModel: TModel;
 		requestOptions: Omit<TOptions, "transformHeaders"> & ProviderRequestOptions<TModel>;
 	}> {
-		this.requireProvider(model);
+		const provider = this.requireProvider(model);
 		const resolution = await this.getAuth(model, {
 			apiKey: options?.apiKey,
 			env: options?.env,
@@ -870,6 +872,23 @@ class ModelsImpl implements MutableModels {
 		const { transformHeaders: _transformHeaders, ...providerOptions } = options ?? {};
 		const requestOptions = { ...providerOptions, apiKey, headers, env } as Omit<TOptions, "transformHeaders"> &
 			ProviderRequestOptions<TModel>;
+
+		if (
+			resolution.source === "OAuth" &&
+			options?.apiKey === undefined &&
+			auth.apiKey &&
+			provider.auth.oauth?.refreshOnStatus?.length
+		) {
+			requestOptions.fetch = oauthRetryFetch({
+				credentials: this.credentials,
+				providerId: provider.id,
+				oauth: provider.auth.oauth,
+				apiKey: auth.apiKey,
+				baseUrl: requestModel.baseUrl,
+				fetch: options?.fetch,
+				signal: options?.signal,
+			});
+		}
 
 		return { requestModel, requestOptions };
 	}

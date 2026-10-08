@@ -50,6 +50,7 @@ import {
 	type ModelTypeMap,
 	type MutableModels,
 	normalizeContext,
+	oauthRetryFetch,
 	type Provider,
 	type ProviderHeaders,
 	type ProviderRequestOptions,
@@ -677,6 +678,22 @@ export class ModelRuntime implements Models {
 				? { ...(resolution.env ?? {}), ...(providerOptions.env ?? {}) }
 				: undefined;
 		const requestModel: TModel = resolution.auth.baseUrl ? { ...model, baseUrl: resolution.auth.baseUrl } : model;
+		if (
+			resolution.source === "OAuth" &&
+			options?.apiKey === undefined &&
+			resolution.auth.apiKey &&
+			provider.auth.oauth?.refreshOnStatus?.length
+		) {
+			providerOptions.fetch = oauthRetryFetch({
+				credentials: this.credentials,
+				providerId: provider.id,
+				oauth: provider.auth.oauth,
+				apiKey: resolution.auth.apiKey,
+				baseUrl: requestModel.baseUrl,
+				fetch: options?.fetch,
+				signal: options?.signal,
+			});
+		}
 		return {
 			provider,
 			model: requestModel,
